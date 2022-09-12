@@ -6,15 +6,17 @@
 
 第三范式：表中每一列和主键之间的是直接依赖关系，而不是间接依赖
 
+[toc]
 
 
-1.SQL语言的分类
+
+# 1.SQL语言的分类
 
 - DDL（数据分类语言）：CREATE\ALTER\DROP\RENAME\TRUNCATE
 - DML（数据操作语言）：INSERT\DELETE\UPDATE\SELECT
 - DCL（数据控制语言）:COMMIT\ROLLBACK\SAVEPOINT\GRANK\REVOKE
 
-2.别名，去重复，筛选,限制结果
+# 2.别名，去重复，筛选,限制结果
 
 ```mysql
 SELECT first_name fn,last_name AS LN,email "e"
@@ -35,75 +37,171 @@ FROM employees
 limit 1,5;
 ```
 
-3.运算符
+# 3.运算符
 
 ```mysql
 #算数运算符
-#+ - * 、 % 数字字符串转为数字，不是数子的为0
+
+#+ - * 、 % 数字字符串转为数字，不是数字的为0
 SELECT 100,100+50,100-50,100*50,100/50,100%50,100+'1',100+'a'
 FROM DUAL;
 
 #比较运算符
+#查询部门id不为10的员工信息
+SELECT *
+from employess
+where department_id <>10;
+#等价于
+SELECT *
+from employess
+where department_id !=10;
+
 #等式两边都为非数字字符串，则通过NSI进行操作
 SELECT 'a'='b',0='a' FROM DUAL;
+
 #只要有null 参与结果就为null
 SELECT NULL=NULL FROM DUAL;
+
 #<=> 安全等于，两边都为null返回1 一边为null 返回0,
 SELECT NULL<=>NULL,1<=>NULL FROM DUAL;
+
 #is null\is not null\isnull
 SELECT last_name,salary,commission_pct FROM employees
 WHERE commission_pct IS NULL;
+
 SELECT last_name,salary,commission_pct FROM employees
 WHERE commission_pct IS NOT NULL;
+
 SELECT last_name,salary,commission_pct FROM employees
 WHERE ISNULL(commission_pct);
+
 #LEAST() \GREATEST  返回最小 \最大的
 SELECT LEAST('G','B','T','M'),GREATEST('G','B','T','M')
 FROM DUAL;
+
 SELECT LEAST(first_name,last_name),GREATEST(LENGTH(first_name),LENGTH(last_name))
 FROM employees;
+
 #Beteen and
 SELECT last_name,salary,commission_pct FROM employees
 WHERE salary BETWEEN 6000 AND 8000 AND commission_pct IS NOT NULL ;
+
 #in ,not in
 SELECT last_name,salary,commission_pct,department_id FROM employees
 WHERE department_id IN(10,20,30) ;
+
 SELECT last_name,salary,commission_pct,department_id FROM employees
 WHERE department_id NOT IN(10,20,30) ;
+
 #LIke:模糊查询 查找last_name包括'a'的
+# %匹配一个或者多个元素  _匹配一个元素
 SELECT last_name FROM employees
 WHERE last_name LIKE '%a%';
+
 #以'a'开头
 SELECT last_name FROM employees
 WHERE last_name LIKE 'a%';
+
 #以'a'结尾
 SELECT last_name FROM employees
 WHERE last_name LIKE '%a';
+
 #同时包含 'a'和'k'
 SELECT last_name FROM employees
 WHERE last_name LIKE '%a%' AND '%k%';
+
 #第二个字符是'a'的 '_'代表不确定字符
 SELECT last_name FROM employees
 WHERE last_name LIKE '_a%';
+
 #第二个字符是'_'的 第三个是'a'
 SELECT last_name FROM employees
 WHERE last_name LIKE '_\_a%';
+
 #REGEXP\RLIKE 正则表达式,以s开头的
 SELECT 'shkerr' REGEXP '^S' FROM DUAL;
 
 ```
 
-4.排序和分页
+# 4.REGEXP  正则表达式
 
 ```mysql
+#匹配所有包括 10的 例如110 101
+SELECT * 
+FROM employees
+WHERE employee_id REGEXP '10'
+#like 只匹配是10的
+SELECT * 
+FROM employees
+WHERE employee_id LIKE '10'
+
+#or  匹配所有包括 10 和11的
+SELECT * 
+FROM employees
+WHERE employee_id REGEXP '10|11'
+
+#匹配多个选项  匹配包含 1 或 2 或 3
+SELECT * 
+FROM employees
+WHERE employee_id REGEXP '[1,2,3]'
+
+#范围匹配
+#匹配包含 1 或者 2 .。。 或者 9
+SELECT * 
+FROM employees
+WHERE employee_id REGEXP '[1-9]'
+
+#转义字符\\
+#匹配包含.的
+SELECT * 
+FROM employees
+WHERE employee_id REGEXP '\\.'
+```
+
+![image-20220912222814441](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220912222814441.png)
+
+![image-20220912222846013](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220912222846013.png)
+
+![image-20220912222907276](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220912222907276.png)
+
+## LIKE和REGEXP的区别
+
+- **在匹配内容上的区别** 
+  LIKE要求整个数据都要匹配，用Like，必须这个字段的所有内容满足条件；
+
+REGEXP只需要部分匹配即可，只需要有任何一个片段满足即可。
+
+- **在匹配位置上的区别**
+
+LIKE 匹配整个列，如果被匹配的文本在列值中出现，LIKE 将不会找到它，相应的行也不会被返回（除非使用通配符）；
+
+REGEXP 在列值内进行匹配，如果被匹配的文本在列值中出现，REGEXP 将会找到它，相应的行将被返回，并且 REGEXP 能匹配整个列值（与 LIKE 相同的作用）。
+
+- **SQL语句返回数据区别**
+
+LIKE匹配 ：该SQL语句将不返回数据；
+
+REGEXP匹配 ：该SQL语句会返回一行数据；
+
+- **速度区别**
+
+
+
+# 5.排序和分页
+
+```mysql
+#当同时使用where和order by时，order by 应该位于where后
+
+#选择按照年终奖进行排序，排序方式DESC为降序，ASC为升序
 SELECT employee_id,last_name,salary*12 annual
 FROM employees
 ORDER BY annual DESC;
+
 SELECT employee_id,last_name
 FROM employees
 WHERE department_id IN (70,60,50)
 ORDER BY department_id DESC;
-#二级排序
+#二级排序，先按照department_id进行降序排列，如果department_id相同时,然后根据salary进行升序排列
 SELECT employee_id,last_name,department_id
 FROM employees
 WHERE department_id IN (70,60,50)
